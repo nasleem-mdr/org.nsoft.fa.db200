@@ -1,0 +1,54 @@
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+		<groupId>org.idempiere</groupId>
+		<artifactId>org.idempiere.parent</artifactId>
+		<version>${revision}</version>
+		<relativePath>../idempiere/org.idempiere.parent/pom.xml</relativePath>
+	</parent>	
+  <groupId>org.nsoft.fa</groupId>
+  <artifactId>org.nsoft.fa.db200</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>bundle</packaging>
+  <dependencies>
+    <dependency>
+        <groupId>org.idempiere</groupId>
+        <artifactId>org.adempiere.base</artifactId> 
+        <version>${revision}</version>
+        <scope>provided</scope>
+    </dependency>
+    
+    </dependencies>
+  
+  <build>
+  <plugins>
+	  <plugin>
+    <groupId>org.apache.felix</groupId>
+    <artifactId>maven-bundle-plugin</artifactId>
+    <version>5.1.1</version>
+    <extensions>true</extensions>
+    <executions>
+        <execution>
+            <id>bundle-manifest</id>
+            <phase>process-classes</phase> <goals>
+                <goal>manifest</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <instructions>
+        <Bundle-SymbolicName>org.nsoft.fa.db200;singleton:=true</Bundle-SymbolicName>
+        <!-- Memastikan folder OSGI-INF dari root ikut dimasukkan ke JAR -->
+        <Include-Resource>OSGI-INF=OSGI-INF,META-INF/MANIFEST.MF=META-INF/MANIFEST.MF</Include-Resource>
+        <Service-Component>OSGI-INF/DB200MethodFactory.xml,OSGI-INF/DDBScheme200.xml</Service-Component>
+        <Bundle-Version>1.0.0.SNAPSHOT</Bundle-Version>
+        <Import-Package>*</Import-Package>
+    </instructions>
+            
+    </configuration>
+</plugin>
+    </plugins>
+</build>
+
+</project>
