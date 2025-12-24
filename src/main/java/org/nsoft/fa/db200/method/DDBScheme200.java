@@ -22,8 +22,9 @@ public class DDBScheme200 implements IDepreciationMethod {
         BigDecimal lifeYears = lifeMonths.divide(BD_12, 0, RoundingMode.HALF_UP);
         BigDecimal annualRate = BD_2.divide(lifeYears, 8, RoundingMode.HALF_UP);
 
-        // --- SIMULASI AKUMULASI MANDIRI ---
         // Kita hitung total penyusutan dari bulan 1 sampai (periodSequence - 1)
+        // Kita tidak mengambil data dari MDepreciationWorkfile agar bisa generate dignakan
+        // pada "Depreciation Expense Entry"
         BigDecimal manualAccumulated = BigDecimal.ZERO;
         BigDecimal currentNBVForLoop = cost;
         
