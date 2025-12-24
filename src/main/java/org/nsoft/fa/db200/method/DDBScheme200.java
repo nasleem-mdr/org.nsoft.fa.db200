@@ -1,3 +1,29 @@
+/**********************************************************************
+* This file is part of iDempiere project                              *
+* http://www.idempiere.com                                            *
+*                                                                     *
+* Copyright (C) Nasleem - Nsoft                                       *
+*                                                                     *
+* This program is free software; you can redistribute it and/or       *
+* modify it under the terms of the GNU General Public License         *
+* as published by the Free Software Foundation; either version 2      *
+* of the License, or (at your option) any later version.              *
+*                                                                     *
+* This program is distributed in the hope that it will be useful,     *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
+* GNU General Public License for more details.                        *
+*                                                                     *
+* You should have received a copy of the GNU General Public License   *
+* along with this program; if not, write to the Free Software         *
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,          *
+* MA 02110-1301, USA.                                                 *
+*                                                                     *
+* Contributors:                                                       *
+* - Nasleem - NSoft                                                   *
+**********************************************************************/
+
+
 package org.nsoft.fa.db200.method;
 
 import java.math.BigDecimal;
@@ -23,8 +49,8 @@ public class DDBScheme200 implements IDepreciationMethod {
         BigDecimal annualRate = BD_2.divide(lifeYears, 8, RoundingMode.HALF_UP);
 
         // Kita hitung total penyusutan dari bulan 1 sampai (periodSequence - 1)
-        // Kita tidak mengambil data dari MDepreciationWorkfile agar bisa generate dignakan
-        // pada "Depreciation Expense Entry"
+        // Kita tidak mengambil data dari MDepreciationWorkfile/DepreciationDTO agar bisa generate 
+        // dignakan pada "Depreciation Expense Entry"
         BigDecimal manualAccumulated = BigDecimal.ZERO;
         BigDecimal currentNBVForLoop = cost;
         
