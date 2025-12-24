@@ -14,7 +14,7 @@ public class DB200MethodFactory implements IDepreciationMethodFactory {
     public IDepreciationMethod getDepreciationMethod(DepreciationFactoryLookupDTO lookupDto) {
     	
     	if (DEPRECIATION_TYPE_DDB200.equals(lookupDto.depreciationType)) {
-            // Jika sistem meminta DDB_200, kembalikan instance kelas perhitungan kita
+            // Jika sistem meminta DB200, kembalikan instance kelas perhitungan kita
             return new DDBScheme200();
         }
         return null; // Jika bukan, kembalikan null
