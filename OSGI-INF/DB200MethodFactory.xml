@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns="http://www.osgi.org/xmlns/scr/v1.1.0"
+           name="org.nsoft.fa.db200.factory.DB200MethodFactory">
+  <implementation class="org.nsoft.fa.db200.factory.DB200MethodFactory"/>
+  <service>
+       <provide interface="org.idempiere.fa.service.api.IDepreciationMethodFactory"/>
+  </service>
+</component>
