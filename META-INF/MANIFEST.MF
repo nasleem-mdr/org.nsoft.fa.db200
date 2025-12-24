@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-ActivationPolicy: lazy
+Bundle-Name: NSoft Fixed Asset Double Declining Balance 200
+Bundle-SymbolicName: org.nsoft.fa.db200;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: NSoft
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: org.adempiere.base,
+ org.compiere.model,
+ org.compiere.util,
+ org.idempiere.fa.service.api,
+ org.osgi.framework;version="1.9.0"
+Service-Component: OSGI-INF/DB200MethodFactory.xml, OSGI-INF/DDBScheme200.xml
