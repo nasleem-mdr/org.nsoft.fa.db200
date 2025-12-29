@@ -1,9 +1,9 @@
 # org.nsoft.fa.db200
-IDempiere Plugin for handle Declining Balance (DB200)
+IDempiere Plugin for handle Declining Balance (DB2SL and DB1SL)
 Test with IDempiere 11
 
 #How this plugin calculate
-Sample : 
+Sample DB2SL : 
 1. Asset Cost IDR 1.200.000
 2. Salvage 0
 3. UseLive 4 years
@@ -23,5 +23,5 @@ Sample :
    
 #How to use
 1. Install
-2. Create or Activate Declining Balance Methode (Depreciation Method Window)
-3. Setup Asset as Usual, use "Declining Balance DB200".
+2. Create or Activate Declining Balance Methode (Depreciation Method Window) - DB2SL/DB1SL
+3. Setup Asset as Usual, use "Declining Balance DB2SL".
