@@ -24,14 +24,11 @@ Test with IDempiere 11
       - Yearly Dep = 1.200.000-1.050.000
       - Montly Dep = 150.000/12
         
-  Year | Value     | rate | depreciation|  sum depreciacion | Net Book Value
---------------------------------------------------------------------------
-- 2022 | 1.200.000 | 50% |    600.000   |         600.000   | 600.000
-- 2023 |   600.000 | 50% |    300.000   |         900.000   | 300.000
-- 2024 |   300.000 | 50% |    150.000   |       1.050.000   | 150.000
-- 2025 |   150.000 | 100%|    150.000   |       1.200.000   |    0
-
-   
+<ins>|Year |Begining Val|Rate |Deprec'tn  |Sum Dep - |Net Book |</ins><br/>
+|2022 |    1.200.000 | -50% |    600.000   |   --600.000   | 600.000|<br/>
+|2023 |    --600.000 | -50% |    300.000   |   --900.000   | 300.000|<br/>
+|2024 |    --300.000 | -50% |    150.000   |   1.050.000   | 150.000|<br/>
+|2025 |    --150.000 | 100% |    150.000   |   1.200.000   | ---0 ---|</br>   
 # How to use
 1. Install
 2. Create or Activate Declining Balance Methode (Depreciation Method Window) - DB2SL (200% DB to SL) or DB1SL(150% DB to SL)
