@@ -11,4 +11,7 @@ Import-Package: org.adempiere.base,
  org.compiere.util,
  org.idempiere.fa.service.api,
  org.osgi.framework;version="1.9.0"
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
+Bundle-ActivationPolicy: lazy
 Service-Component: OSGI-INF/DB200MethodFactory.xml, OSGI-INF/DDBScheme200.xml
+
