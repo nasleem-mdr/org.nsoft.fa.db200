@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-ActivationPolicy: lazy
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
 Bundle-Name: NSoft Fixed Asset Double Declining Balance 200
 Bundle-SymbolicName: org.nsoft.fa.db200;singleton:=true
 Bundle-Version: 1.0.0.qualifier
@@ -11,7 +12,6 @@ Import-Package: org.adempiere.base,
  org.compiere.util,
  org.idempiere.fa.service.api,
  org.osgi.framework;version="1.9.0"
-Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
-Bundle-ActivationPolicy: lazy
+Require-Bundle: org.adempiere.plugin.utils;bundle-version="13.0.0",
+ org.adempiere.base;bundle-version="13.0.0"
 Service-Component: OSGI-INF/DB200MethodFactory.xml, OSGI-INF/DDBScheme200.xml
-
