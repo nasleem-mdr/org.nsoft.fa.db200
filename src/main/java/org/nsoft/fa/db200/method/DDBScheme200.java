@@ -31,6 +31,31 @@ import java.math.RoundingMode;
 import org.idempiere.fa.service.api.DepreciationDTO;
 import org.idempiere.fa.service.api.IDepreciationMethod;
 
+/**
+ * Double Declining Balance switching to Straight Line (DB2SL), rate 200%.
+ *
+ * Catatan perbaikan (lihat versi sebelumnya untuk pembanding):
+ * 1. Pemilihan nilai tahunan tidak lagi sekedar max(DDB, SL). Begitu nilai SL
+ *    (sisa nilai yang masih bisa disusutkan dibagi sisa tahun) >= DDB, tahun
+ *    tersebut dan seterusnya WAJIB memakai SL. Inilah esensi metode "switch"
+ *    pada DB2SL: SL dipilih bukan karena lebih besar, tapi karena DDB sudah
+ *    tidak akan pernah menghabiskan nilai aset sampai salvage dalam sisa umur
+ *    yang ada, sehingga SL mengambil alih agar NBV akhir tepat sama dengan
+ *    salvage.
+ * 2. NBV awal tahun dihitung dengan mengulang dari tahun ke-0 sampai tahun
+ *    target (bukan dari "cost" dikurangi akumulasi manual yang rawan bias
+ *    pembulatan kumulatif).
+ * 3. Pembulatan bulanan dikoreksi di bulan TERAKHIR setiap tahun (bulan ke-12
+ *    pada tahun tersebut, atau periode terakhir keseluruhan), supaya total
+ *    12 bulan selalu tepat sama dengan nilai penyusutan tahunan yang sudah
+ *    dihitung. Tanpa ini, pembagian yearlyDepr/12 bisa meninggalkan sisa
+ *    pembulatan beberapa rupiah yang membuat total akumulasi akhir asset
+ *    tidak pas dengan (cost - salvage).
+ * 4. Limit global lama (`cost - salvage - manualAccumulated`) yang menjadi
+ *    sumber bug "salvage tidak terhitung / depresiasi berhenti sebelum
+ *    waktunya" telah dihapus, karena floor salvage sudah dijamin benar pada
+ *    level tahunan oleh `max_yearly = nbv - salvage` pada langkah 1.
+ */
 public class DDBScheme200 implements IDepreciationMethod {
     private static final BigDecimal BD_12 = BigDecimal.valueOf(12);
     private static final BigDecimal BD_2 = BigDecimal.valueOf(2.0);
@@ -46,69 +71,74 @@ public class DDBScheme200 implements IDepreciationMethod {
         if (lifeMonths.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
 
         BigDecimal lifeYears = lifeMonths.divide(BD_12, 0, RoundingMode.HALF_UP);
+        int lifeYearsInt = lifeYears.intValue();
+        if (lifeYearsInt <= 0) return BigDecimal.ZERO;
+
         BigDecimal annualRate = BD_2.divide(lifeYears, 8, RoundingMode.HALF_UP);
 
-        // Kita hitung total penyusutan dari bulan 1 sampai (periodSequence - 1)
-        // Kita tidak mengambil data dari MDepreciationWorkfile/DepreciationDTO agar bisa generate 
-        // dignakan pada "Depreciation Expense Entry"
-        BigDecimal manualAccumulated = BigDecimal.ZERO;
-        BigDecimal currentNBVForLoop = cost;
-        
-        int currentYearIdx = (periodSequence - 1) / 12;
+        int targetYearIdx = (periodSequence - 1) / 12;
+        boolean isLastPeriodOverall = periodSequence >= lifeMonths.intValue();
 
-        // Hitung akumulasi tahun-tahun sebelumnya
-        for (int y = 0; y < currentYearIdx; y++) {
-            BigDecimal ddbYearly = currentNBVForLoop.multiply(annualRate);
-            
-            // Hitung SL sebagai pembanding untuk tahun tersebut
-            int remainingY = lifeYears.intValue() - y;
-            BigDecimal slYearly = currentNBVForLoop.subtract(salvage)
-                                    .divide(BigDecimal.valueOf(remainingY), 8, RoundingMode.HALF_UP);
-            
-            BigDecimal yearDepr = ddbYearly.max(slYearly);
-            
-            // Jika yearDepr melebihi sisa yang bisa disusutkan
-            BigDecimal maxYearly = currentNBVForLoop.subtract(salvage);
-            if (yearDepr.compareTo(maxYearly) > 0) yearDepr = maxYearly;
-            
-            manualAccumulated = manualAccumulated.add(yearDepr.setScale(scale, RoundingMode.HALF_UP));
-            currentNBVForLoop = cost.subtract(manualAccumulated);
+        // --- Hitung NBV awal tahun & nilai penyusutan tahun target dengan
+        //     mengulang dari tahun pertama. Ini menggantikan loop manual
+        //     "manualAccumulated" pada versi sebelumnya. ---
+        BigDecimal nbv = cost;
+        BigDecimal yearlyDeprForTargetYear = BigDecimal.ZERO;
+
+        for (int y = 0; y <= targetYearIdx; y++) {
+            int remainingYears = lifeYearsInt - y;
+
+            BigDecimal ddbYearly = nbv.multiply(annualRate);
+            BigDecimal slYearly = BigDecimal.ZERO;
+            if (remainingYears > 0) {
+                slYearly = nbv.subtract(salvage)
+                        .divide(BigDecimal.valueOf(remainingYears), 8, RoundingMode.HALF_UP);
+            }
+
+            // *** Logika switch DB2SL yang benar: pilih SL begitu SL >= DDB ***
+            BigDecimal yearDepr;
+            if (slYearly.compareTo(ddbYearly) >= 0) {
+                yearDepr = slYearly;
+            } else {
+                yearDepr = ddbYearly;
+            }
+
+            // Floor: jangan sampai menyusutkan lebih dari sisa nilai di atas salvage
+            BigDecimal maxYearly = nbv.subtract(salvage);
+            if (yearDepr.compareTo(maxYearly) > 0) {
+                yearDepr = maxYearly;
+            }
+            if (yearDepr.compareTo(BigDecimal.ZERO) < 0) {
+                yearDepr = BigDecimal.ZERO;
+            }
+
+            BigDecimal yearDeprRounded = yearDepr.setScale(scale, RoundingMode.HALF_UP);
+
+            if (y == targetYearIdx) {
+                yearlyDeprForTargetYear = yearDeprRounded;
+            }
+
+            nbv = nbv.subtract(yearDeprRounded);
         }
 
-        // Sekarang kita punya NBV di awal tahun berjalan
-        BigDecimal nbvStartYear = currentNBVForLoop;
-        
-        // Hitung nilai penyusutan tahun berjalan
-        BigDecimal ddbThisYear = nbvStartYear.multiply(annualRate);
-        int remainingYears = lifeYears.intValue() - currentYearIdx;
-        BigDecimal slThisYear = BigDecimal.ZERO;
-        if (remainingYears > 0) {
-            slThisYear = nbvStartYear.subtract(salvage)
-                            .divide(BigDecimal.valueOf(remainingYears), 8, RoundingMode.HALF_UP);
-        }
-        
-        BigDecimal finalYearlyDepr = ddbThisYear.max(slThisYear);
-        BigDecimal monthlyDepr = finalYearlyDepr.divide(BD_12, scale, RoundingMode.HALF_UP);
+        BigDecimal monthlyDepr = yearlyDeprForTargetYear.divide(BD_12, scale, RoundingMode.HALF_UP);
 
-        // Tambahkan akumulasi bulan-bulan yang sudah lewat di tahun berjalan ini
+        // --- Koreksi pembulatan: bulan terakhir pada tahun ini (atau periode
+        //     terakhir keseluruhan) menyerap sisa pembulatan, supaya total
+        //     12 bulan == yearlyDeprForTargetYear secara presisi. ---
         int monthsPassedInYear = (periodSequence - 1) % 12;
-        manualAccumulated = manualAccumulated.add(monthlyDepr.multiply(BigDecimal.valueOf(monthsPassedInYear)));
+        boolean isLastMonthOfThisYear = (monthsPassedInYear == 11) || isLastPeriodOverall;
 
-        // --- FINAL CHECK: PERIODE TERAKHIR ATAU OVER-DEPRECIATION ---
-        BigDecimal totalDepreciableLimit = cost.subtract(salvage);
-        BigDecimal remainingToDepreciate = totalDepreciableLimit.subtract(manualAccumulated);
-
-        // Jika periode terakhir, ambil sisa seluruhnya
-        if (periodSequence >= lifeMonths.intValue()) {
-            return remainingToDepreciate.max(BigDecimal.ZERO).setScale(scale, RoundingMode.HALF_UP);
+        if (isLastMonthOfThisYear) {
+            BigDecimal accumulatedBeforeThisMonth = monthlyDepr.multiply(BigDecimal.valueOf(monthsPassedInYear));
+            monthlyDepr = yearlyDeprForTargetYear.subtract(accumulatedBeforeThisMonth);
         }
 
-        // Pastikan penyusutan bulan ini tidak melebihi sisa limit
-        if (monthlyDepr.compareTo(remainingToDepreciate) > 0) {
-            monthlyDepr = remainingToDepreciate;
+        if (monthlyDepr.compareTo(BigDecimal.ZERO) < 0) {
+            monthlyDepr = BigDecimal.ZERO;
         }
 
-        return monthlyDepr.max(BigDecimal.ZERO).setScale(scale, RoundingMode.HALF_UP);
+        return monthlyDepr.setScale(scale, RoundingMode.HALF_UP);
     }
 
     @Override
